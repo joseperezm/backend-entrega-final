@@ -2,6 +2,16 @@ const UserModel = require('../dao/models/user-mongoose');
 const logger = require('../config/logger');
 const path = require('path');
 
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await UserModel.find({}, 'first_name last_name email role last_connection');
+    res.status(200).json(users);
+  } catch (error) {
+    logger.error('Error al obtener los usuarios:', error);
+    res.status(500).json({ message: 'Error interno del servidor', error });
+  }
+};
+
 exports.changeUserRole = async (req, res) => {
   try {
     const { uid } = req.params;
