@@ -6,6 +6,7 @@ const authorizeApi = require('../middleware/authorizeApi.js');
 const upload = require('../middleware/multer');
 
 router.delete('/', authorizeApi('admin'), userController.deleteInactiveUsers);
+router.delete('/:uid', authorizeApi('admin'), redirectIfNotLoggedInApi, userController.deleteUser);
 router.get('/', authorizeApi('admin'), userController.getAllUsers);
 router.put('/premium/:uid', authorizeApi('admin'), redirectIfNotLoggedInApi, userController.changeUserRole);
 router.post('/:uid/documents', upload.array('documents'), redirectIfNotLoggedInApi, userController.uploadDocuments);
