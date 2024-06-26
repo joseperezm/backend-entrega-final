@@ -1,6 +1,50 @@
 const UserModel = require('../dao/models/user-mongoose');
 const logger = require('../config/logger');
 const path = require('path');
+const nodemailer = require('nodemailer');
+const config = require('../config/config');
+
+const transport = nodemailer.createTransport({
+  service: 'gmail',
+  port: 587,
+  auth: {
+      user: config.EMAIL_USER,
+      pass: config.EMAIL_PASS
+  },
+  pool: true,
+  rateLimit: 1,
+  maxConnections: 1,
+  maxMessages: 10
+});
+
+exports.deleteInactiveUsers = async (req, res) => {
+  try {
+      const now = new Date();
+      const threshold = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+
+      const inactiveUsers = await UserModel.find({ last_connection: { $lt: threshold } });
+
+      const deletePromises = inactiveUsers.map(async user => {
+          if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email)) {
+              const mailOptions = {
+                  from: config.EMAIL_USER,
+                  to: user.email,
+                  subject: 'Cuenta eliminada por inactividad',
+                  text: `Hola ${user.first_name},\n\nTu cuenta ha sido eliminada debido a inactividad.\n\nSaludos,\nEquipo de Soporte`
+              };
+              await transport.sendMail(mailOptions);
+          }
+          return UserModel.findByIdAndDelete(user._id);
+      });
+
+      await Promise.all(deletePromises);
+
+      res.status(200).json({ message: 'Usuarios inactivos eliminados y correos enviados (cuando correspondía).' });
+  } catch (error) {
+      logger.error('Error al eliminar usuarios inactivos:', error);
+      res.status(500).json({ message: 'Error interno del servidor', error });
+  }
+};
 
 exports.getAllUsers = async (req, res) => {
   try {
