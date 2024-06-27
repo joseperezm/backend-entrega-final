@@ -1,8 +1,24 @@
+const nodemailer = require('nodemailer');
+const config = require('../config/config');
+const UserModel = require('../dao/models/user-mongoose');
 const productService = require('../services/productService');
 const Product = require('../dao/models/products-mongoose');
 const { generateProductsApi } = require('../utils/mockData');
 const errorCodes = require('../utils/errorCodes');
 const logger = require("../config/logger");
+
+const transport = nodemailer.createTransport({
+    service: 'gmail',
+    port: 587,
+    auth: {
+        user: config.EMAIL_USER,
+        pass: config.EMAIL_PASS
+    },
+    pool: true,
+    rateLimit: 1,
+    maxConnections: 1,
+    maxMessages: 10
+});
 
 exports.getProducts = async (req, res, next) => {
     const limit = req.query.limit === undefined ? 10 : parseInt(req.query.limit, 10);
@@ -115,20 +131,36 @@ exports.deleteProduct = async (req, res, next) => {
         const userId = req.user.id;
         const userRole = req.user.role;
 
-        const product = await Product.findById(productId);
+        // Obtener el producto y llenar el campo owner
+        const product = await Product.findById(productId).populate('owner');
 
         if (!product) {
             logger.info("Producto no encontrado");
             return res.status(404).json({ code: 'NOT_FOUND', message: 'Producto no encontrado' });
         }
 
-        if (userRole === 'premium' && product.owner.toString() !== userId.toString()) {
-            logger.warn(`Usuario premium intentó borrar un producto que no le pertenece. User ID: ${userId}, Product Owner: ${product.owner}`);
+        // Verificar si el usuario premium está tratando de eliminar un producto que no le pertenece
+        if (userRole === 'premium' && product.owner._id.toString() !== userId.toString()) {
+            logger.warn(`Usuario premium intentó borrar un producto que no le pertenece. User ID: ${userId}, Product Owner: ${product.owner._id}`);
             return res.status(403).json({ message: 'No autorizado para borrar este producto' });
         }
 
+        // Eliminar el producto
         const success = await productService.deleteProduct(productId);
         if (success) {
+            // Enviar correo si el propietario es un usuario premium
+            if (product.owner.role === 'premium' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(product.owner.email)) {
+                const mailOptions = {
+                    from: config.EMAIL_USER,
+                    to: product.owner.email,
+                    subject: 'Producto Eliminado',
+                    text: `Hola ${product.owner.first_name},\n\nTu producto "${product.title}" ha sido eliminado.\n\nSaludos,\nEquipo de Soporte`
+                };
+                await transport.sendMail(mailOptions);
+                logger.info(`Correo enviado exitosamente a ${product.owner.first_name} ${product.owner.last_name} (${product.owner.email})`);
+            } else {
+                logger.info(`No se envió el correo porque el usuario no es premium o el correo no es válido. Usuario: ${product.owner.first_name} ${product.owner.last_name}, Rol: ${product.owner.role}, Correo: ${product.owner.email}`);
+            }
             res.status(200).json({ message: 'Producto eliminado correctamente' });
         } else {
             logger.info("Producto no encontrado");

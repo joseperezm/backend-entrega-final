@@ -6,6 +6,7 @@ const socket = require("socket.io");
 const MongoStore = require('connect-mongo');
 const cookieParser = require('cookie-parser');
 const passport = require('passport');
+const nodemailer = require('nodemailer');
 const productsRouter = require("./routes/products.router.js");
 const cartsRouter = require("./routes/carts.router.js");
 const viewsRouter = require("./routes/views.router.js");
@@ -36,6 +37,19 @@ app.use(cookieParser());
 
 const { swaggerUiExpress, specs } = require('./config/swagger.js');
 app.use('/apidocs', swaggerUiExpress.serve, swaggerUiExpress.setup(specs));
+
+const transport = nodemailer.createTransport({
+    service: 'gmail',
+    port: 587,
+    auth: {
+        user: config.EMAIL_USER,
+        pass: config.EMAIL_PASS
+    },
+    pool: true,
+    rateLimit: 1,
+    maxConnections: 1,
+    maxMessages: 10
+});
 
 const oneWeekLogin = 7 * 24 * 60 * 60;
 
@@ -181,7 +195,7 @@ io.on("connection", async (socket) => {
 
     socket.on("deleteProduct", async ({ id, userId, userRole }) => {
         try {
-            const product = await Product.findById(id);
+            const product = await Product.findById(id).populate('owner');
 
             if (!product) {
                 logger.info("Producto no encontrado");
@@ -189,15 +203,30 @@ io.on("connection", async (socket) => {
                 return;
             }
 
-            if (userRole === 'premium' && product.owner.toString() !== userId) {
-                logger.warn(`Usuario premium intentó borrar un producto que no le pertenece. User ID: ${userId}, Product Owner: ${product.owner}`);
+            if (userRole === 'premium' && product.owner._id.toString() !== userId) {
+                logger.warn(`Usuario premium intentó borrar un producto que no le pertenece. User ID: ${userId}, Product Owner: ${product.owner._id}`);
                 socket.emit("deleteError", { message: "No autorizado para borrar este producto" });
                 return;
             }
 
-            await Product.findByIdAndDelete(id);
-            io.sockets.emit("products", await Product.find());
-            logger.info('Producto eliminado correctamente');
+            const success = await Product.findByIdAndDelete(id);
+            if (success) {
+                if (product.owner.role === 'premium' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(product.owner.email)) {
+                    const mailOptions = {
+                        from: config.EMAIL_USER,
+                        to: product.owner.email,
+                        subject: 'Producto Eliminado',
+                        text: `Hola ${product.owner.first_name},\n\nTu producto "${product.title}" ha sido eliminado.\n\nSaludos,\nEquipo de Soporte`
+                    };
+                    await transport.sendMail(mailOptions);
+                    logger.info(`Correo enviado exitosamente a ${product.owner.first_name} ${product.owner.last_name} (${product.owner.email})`);
+                }
+                io.sockets.emit("products", await Product.find());
+                logger.info('Producto eliminado correctamente');
+            } else {
+                logger.info("Producto no encontrado");
+                socket.emit("deleteError", { message: "Producto no encontrado" });
+            }
         } catch (error) {
             logger.error('Error al eliminar el producto:', error);
             socket.emit("deleteError", { message: "Error interno al eliminar el producto" });
