@@ -203,8 +203,14 @@ io.on("connection", async (socket) => {
                 return;
             }
 
+            if (product.owner === null) {
+                logger.warn(`Usuario premium intentó borrar el producto con ID: ${id} que no le pertenece. User ID: ${userId}, Product Owner: sin propietario válido.`);
+                socket.emit("deleteError", { message: "No autorizado para borrar este producto" });
+                return;
+            }
+
             if (userRole === 'premium' && product.owner._id.toString() !== userId) {
-                logger.warn(`Usuario premium intentó borrar un producto que no le pertenece. User ID: ${userId}, Product Owner: ${product.owner._id}`);
+                logger.warn(`Usuario premium intentó borrar el producto con ID: ${id} que no le pertenece. User ID: ${userId}, Product Owner: ${product.owner._id}`);
                 socket.emit("deleteError", { message: "No autorizado para borrar este producto" });
                 return;
             }
@@ -232,7 +238,7 @@ io.on("connection", async (socket) => {
             socket.emit("deleteError", { message: "Error interno al eliminar el producto" });
         }
     });
-
+    
     socket.on("addProduct", async (producto) => {
         await productRepositor.addProduct(producto);
         io.sockets.emit("products", await productRepositor.getProducts());
