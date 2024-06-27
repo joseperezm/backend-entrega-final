@@ -131,7 +131,6 @@ exports.deleteProduct = async (req, res, next) => {
         const userId = req.user.id;
         const userRole = req.user.role;
 
-        // Obtener el producto y llenar el campo owner
         const product = await Product.findById(productId).populate('owner');
 
         if (!product) {
@@ -139,16 +138,13 @@ exports.deleteProduct = async (req, res, next) => {
             return res.status(404).json({ code: 'NOT_FOUND', message: 'Producto no encontrado' });
         }
 
-        // Verificar si el usuario premium está tratando de eliminar un producto que no le pertenece
         if (userRole === 'premium' && product.owner._id.toString() !== userId.toString()) {
             logger.warn(`Usuario premium intentó borrar un producto que no le pertenece. User ID: ${userId}, Product Owner: ${product.owner._id}`);
             return res.status(403).json({ message: 'No autorizado para borrar este producto' });
         }
 
-        // Eliminar el producto
         const success = await productService.deleteProduct(productId);
         if (success) {
-            // Enviar correo si el propietario es un usuario premium
             if (product.owner.role === 'premium' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(product.owner.email)) {
                 const mailOptions = {
                     from: config.EMAIL_USER,
