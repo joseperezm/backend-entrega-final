@@ -33,7 +33,7 @@
 
 ## Observaciones
 
-Para la autorización de usuario premium se deben subir tres documentos acreditando cuenta, id y domicilio. para que esto sea aceptado cada uno de los documentos deben llevar como nombre id, cuenta y domicilio.
+Para la autorización de usuario premium se deben subir tres documentos acreditando cuenta, id y domicilio. Para que esto sea aceptado cada uno de los documentos deben llevar como nombre id, cuenta y domicilio.
 
 - id.pdf
 - domicilio.pdf
