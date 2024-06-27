@@ -280,6 +280,7 @@ class CartRepository {
             let failedProducts = [];
             const updates = [];
             let newTicket = null;
+            let purchasedProducts = [];
     
             for (const item of cart.products) {
                 const product = await Product.findById(item.productId);
@@ -287,6 +288,7 @@ class CartRepository {
                     product.stock -= item.quantity;
                     totalAmount += item.quantity * product.price;
                     updates.push(product.save());
+                    purchasedProducts.push({ productId: product._id, quantity: item.quantity });
                 } else {
                     failedProducts.push({ id: item.productId.toString(), title: product.title, _id: product._id });
                 }
@@ -299,7 +301,9 @@ class CartRepository {
                     code: Math.random().toString(36).substr(2, 9),
                     purchase_datetime: new Date(),
                     amount: totalAmount,
-                    purchaser: userEmail
+                    purchaser: userEmail,
+                    products: purchasedProducts,
+                    failedProducts: failedProducts.map(fp => fp._id)
                 });
                 await newTicket.save();
             }
@@ -319,7 +323,7 @@ class CartRepository {
             customError.code = 'INTERNAL_SERVER_ERROR';
             throw { code: 'INTERNAL_SERVER_ERROR', original: customError };
         }
-    }    
+    }  
     
 }
 

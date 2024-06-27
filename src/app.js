@@ -137,8 +137,10 @@ app.engine("handlebars", exphbs.engine({
             }
         }
     },
-    allowProtoPropertiesByDefault: true,
-    allowProtoMethodsByDefault: true
+    runtimeOptions: {
+        allowProtoPropertiesByDefault: true,
+        allowProtoMethodsByDefault: true
+    }
 }));
 
 app.set("view engine", "handlebars");

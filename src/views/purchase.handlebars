@@ -1,9 +1,38 @@
-    <h1>Finalizar Compra</h1>
-    <p>Estás a punto de finalizar tu compra.</p>
-    {{#if error}}
-        <p>Error: {{error}}</p>
-    {{else}}
-        <form action="/carts/{{cartId}}/purchase" method="POST">
-            <button type="submit">Confirmar Compra</button>
-        </form>
+<h1 class="mt-4 mb-3 text-center">Detalles de la Compra</h1>
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Número de Ticket: <span>{{ticket.code}}</span></h5>
+            <p class="card-text">Fecha de Compra: <span>{{ticket.purchase_datetime}}</span></p>
+            <p class="card-text">Total: <span>${{ticket.amount}}</span></p>
+            <p class="card-text">Comprador: <span>{{ticket.purchaser}}</span></p>
+        </div>
+    </div>
+
+    <h2 class="mt-4">Productos</h2>
+    <div class="list-group m-2">
+        {{#each ticket.products}}
+        <div class="list-group-item cartList">
+            <div class="product-info">
+                <h4 class="h5">{{this.productId.title}}</h4>
+                <p>{{this.productId.description}}</p>
+                <p>Cantidad: <span class="badge bg-secondary">{{this.quantity}}</span></p>
+                <p>Precio: <span class="text-muted">${{this.productId.price}}</span></p>
+                <p>Total: <span class="text-muted">$ {{multiply this.quantity this.productId.price}}</span></p>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+
+    {{#if ticket.failedProducts.length}}
+    <div class="mt-4">
+        <h3>Productos que no pudieron ser comprados debido a falta de stock</h3>
+        <ul class="list-group">
+            {{#each ticket.failedProducts}}
+            <li class="list-group-item">{{this.title}} (ID: {{this._id}})</li>
+            {{/each}}
+        </ul>
+    </div>
     {{/if}}
+</div>

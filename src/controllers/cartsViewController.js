@@ -1,3 +1,5 @@
+const Ticket = require('../dao/models/ticket-mongoose');
+const Product = require('../dao/models/products-mongoose');
 const cartService = require('../services/cartService');
 const errorCodes = require('../utils/errorCodes');
 const { CastError } = require('mongoose').Error;
@@ -35,5 +37,23 @@ exports.showCart = async (req, res, next) => {
         }
         logger.error("Error al obtener el carrito por ID", error);
         next({ code: 'INTERNAL_SERVER_ERROR', original: error });
+    }
+};
+
+exports.showPurchaseDetails = async (req, res, next) => {
+    try {
+        const ticketId = req.params.ticketId;
+        const ticket = await Ticket.findById(ticketId).populate('products.productId').populate('failedProducts');
+        if (!ticket) {
+            return res.status(404).render('error', { message: 'Ticket no encontrado' });
+        }
+
+        res.render('purchase', {
+            ticket,
+            products: ticket.products,
+            failedProducts: ticket.failedProducts
+        });
+    } catch (error) {
+        next(error);
     }
 };

@@ -16,10 +16,9 @@ document.getElementById('finalize-purchase').addEventListener('click', function(
                 data.failedProducts.forEach(prod => {
                     failedMessage += `${prod.title} ID:${prod._id} / `;
                 });
-                failedMessage;
                 alert(failedMessage);
             }
-            window.location.href = '/products';
+            window.location.href = `/purchase/${data.ticketId}`;
         } else {
             alert(data.message);
         }

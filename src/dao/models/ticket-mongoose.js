@@ -19,7 +19,18 @@ const ticketSchema = new mongoose.Schema({
   purchaser: { 
     type: String, 
     required: true
-  }
+  },
+  products: [{
+    productId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Product'
+    },
+    quantity: { type: Number }
+  }],
+  failedProducts: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Product'
+  }]
 });
 
 ticketSchema.plugin(uniqueValidator, { message: 'El {PATH} debe ser único.' });
