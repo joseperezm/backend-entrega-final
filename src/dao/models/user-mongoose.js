@@ -14,7 +14,8 @@ const userSchema = new mongoose.Schema({
   cart: { type: mongoose.Schema.Types.ObjectId, ref: 'Cart', default: null },
   password: { type: String },
   documents: { type: [documentSchema], default: [] },
-  last_connection: { type: Date }
+  last_connection: { type: Date },
+  profile_image: { type: String, default: 'uploads/placeholder.jpg' }
 });
 
 const User = mongoose.model('User', userSchema);

@@ -1,12 +1,94 @@
-    <h1 class="mt-4 mb-3 text-center">Perfil de usuario</h1>
-    <div class="card">
-        <div class="card-body">
-            <p class="card-text"><strong>Nombre:</strong> {{user.first_name}} {{user.last_name}}</p>
-            <p class="card-text"><strong>Email:</strong> {{user.email}}</p>
-            <p class="card-text"><strong>Edad:</strong> {{user.age}}</p>
-            <p class="card-text"><strong>Rol:</strong> {{user.role}}</p>
-        </div>
+<h1 class="mt-4 mb-3 text-center">Perfil de usuario</h1>
+<div class="card">
+    <div class="card-body">
+        <img src="/{{user.profile_image}}" alt="imagen perfil" class="w-100 mb-3">
+        <p class="card-text"><strong>Nombre:</strong>
+            {{user.first_name}}
+            {{user.last_name}}</p>
+        <p class="card-text"><strong>Email:</strong> {{user.email}}</p>
+        <p class="card-text"><strong>Edad:</strong> {{user.age}}</p>
+        <p class="card-text"><strong>Rol:</strong> {{user.role}}</p>
+        <p class="card-text"><strong>ID:</strong> {{user.id}}</p>
+        <p class="card-text"><strong>Estado documentos:</strong></p>
+    <ul>
+        <li>ID: {{#if (documentExists user.documents 'id')}}Subido{{else}}No subido{{/if}}</li>
+        <li>Cuenta: {{#if (documentExists user.documents 'cuenta')}}Subido{{else}}No subido{{/if}}</li>
+        <li>Domicilio: {{#if (documentExists user.documents 'domicilio')}}Subido{{else}}No subido{{/if}}</li>
+    </ul>
+       
     </div>
-    <div class="text-center mt-3">
-        <a href="/api/sessions/logout" class="btn btn-danger">Cerrar Sesión</a>
+</div>
+
+<form class="form-control w-100" id="upload-profile-image-form" action="/api/users/{{user.id}}/profile-image" method="POST"
+    enctype="multipart/form-data">
+    <input class="form-control w-100" type="file" name="profile_image">
+    <button type="submit" class="btn btn-primary w-100">Actualizar Imagen de Perfil</button>
+</form>
+<div class="card">
+    <div class="card-body">
+            <p class="small">Los documentos subidos deben llevar en su nombre "id", "cuenta" y "domicilio".</p>
+            <p class="mt-4 small">Ej: cuenta_corriente.pdf mi_domicilio.pdf</p>
     </div>
+</div>
+<form id="upload-documents-form" action="/api/users/:uid/documents" method="POST" enctype="multipart/form-data"
+    class="form-control w-100">
+    <input class="form-control" type="file" name="documents" multiple />
+    <button type="submit" class="btn btn-primary w-100">Subir Documentos para
+        Premium</button>
+</form>
+
+<div class="text-center mt-3">
+    <a href="/api/sessions/logout" class="btn btn-danger">Cerrar Sesión</a>
+</div>
+<script>
+    document.getElementById('upload-documents-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const form = event.target;
+        const formData = new FormData(form);
+        const uid = "{{user.id}}";
+
+        try {
+            const response = await fetch(`/api/users/${uid}/documents`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert('Documentos subidos exitosamente.');
+                window.location.reload();
+            } else {
+                alert(`Error: ${result.message}`);
+            }
+        } catch (error) {
+            console.error('Error al subir documentos:', error);
+            alert('Error interno del servidor');
+        }
+    });
+        document.getElementById('upload-profile-image-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const form = event.target;
+        const formData = new FormData(form);
+        const uid = "{{user.id}}";
+
+        try {
+            const response = await fetch(`/api/users/${uid}/profile-image`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert('Imagen subida exitosamente.');
+                window.location.reload();
+            } else {
+                alert(`Error: ${result.message}`);
+            }
+        } catch (error) {
+            console.error('Error al subir imagen:', error);
+            alert('Error interno del servidor');
+        }
+    });
+</script>

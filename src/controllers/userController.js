@@ -110,7 +110,6 @@ exports.changeUserRole = async (req, res) => {
   }
 };
 
-
 exports.uploadDocuments = async (req, res) => {
   try {
     const { uid } = req.params;
@@ -151,6 +150,7 @@ exports.uploadDocuments = async (req, res) => {
     res.status(500).json({ message: "Error interno del servidor", error });
   }
 };
+
 exports.showAdminUsers = async (req, res) => {
   try {
     const users = await UserModel.find({}).lean();
@@ -172,6 +172,28 @@ exports.deleteUser = async (req, res) => {
     res.status(200).json({ message: "Usuario eliminado correctamente." });
   } catch (error) {
     logger.error("Error al eliminar el usuario:", error);
+    res.status(500).json({ message: "Error interno del servidor", error });
+  }
+};
+
+exports.uploadProfileImage = async (req, res) => {
+  try {
+    const { uid } = req.params;
+    const user = await UserModel.findById(uid);
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado." });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No se ha subido ninguna imagen." });
+    }
+
+    user.profile_image = req.file.path.replace(/^.*uploads\//, "uploads/");
+    await user.save();
+
+    res.status(200).json({ message: "Imagen de perfil actualizada exitosamente.", profile_image: user.profile_image });
+  } catch (error) {
+    console.error("Error al subir la imagen de perfil:", error);
     res.status(500).json({ message: "Error interno del servidor", error });
   }
 };

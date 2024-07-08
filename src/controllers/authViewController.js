@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const Token = require('../dao/models/token-mongoose');
+const UserModel = require("../dao/models/user-mongoose");
 
 exports.showLogin = (req, res) => {
     const messages = req.flash();
@@ -12,8 +13,19 @@ exports.showRegister = (req, res) => {
 };
 
 exports.showProfile = (req, res) => {
-    res.render('profile', { user: req.session.user });
-};
+    UserModel.findById(req.session.user.id)
+      .then(user => {
+        if (!user) {
+          return res.status(404).send('Usuario no encontrado.');
+        }
+        res.render('profile', { user: user });
+      })
+      .catch(error => {
+        console.error('Error al obtener el perfil del usuario:', error);
+        res.status(500).send('Error interno del servidor');
+      });
+  };
+  
 
 exports.showForgotPassword = (req, res) => {
     const messages = req.flash();

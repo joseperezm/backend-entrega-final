@@ -135,6 +135,9 @@ app.engine("handlebars", exphbs.engine({
                 default:
                     return options.inverse(this);
             }
+        },
+        documentExists: function (documents, docName) {
+            return documents.some(doc => doc.name === docName);
         }
     },
     runtimeOptions: {

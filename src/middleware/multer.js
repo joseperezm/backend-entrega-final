@@ -18,7 +18,7 @@ directories.forEach(dir => {
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     let folder = 'uploads';
-    if (file.fieldname === 'profiles') {
+    if (file.fieldname === 'profile_image') {
       folder = 'public/uploads/profiles';
     } else if (file.fieldname === 'products') {
       folder = 'public/uploads/products';
