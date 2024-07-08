@@ -21,10 +21,6 @@
                 <td>{{this.last_connection}}</td>
                 <td>
                     <form onsubmit="changeUserRole(event, '{{this._id}}')" method="POST">
-                        <select name="role">
-                            <option value="user" {{#ifCond this.role '==' 'user'}}selected{{/ifCond}}>User</option>
-                            <option value="premium" {{#ifCond this.role '==' 'premium'}}selected{{/ifCond}}>Premium</option>
-                        </select>
                         <button type="submit" class="btn btn-primary btn-sm">Modificar Rol</button>
                     </form>
                     <form class="delete-user-form" data-user-id="{{this._id}}" style="display:inline;">
@@ -40,15 +36,12 @@
 <script>
 function changeUserRole(event, userId) {
     event.preventDefault();
-    const form = event.target;
-    const role = form.role.value;
 
     fetch(`/api/users/premium/${userId}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ role })
+        }
     })
     .then(response => response.json())
     .then(data => {

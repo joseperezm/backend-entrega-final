@@ -44,7 +44,6 @@ El proyecto utiliza las siguientes tecnologías:
   - Socket.io (para comunicación en tiempo real)
   - Nodemailer (para envío de correos)
   - Winston (para logging)
-  - Mocha y Chai (para pruebas automatizadas)
 
 - **Base de Datos**:
 

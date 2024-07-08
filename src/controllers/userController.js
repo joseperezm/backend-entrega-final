@@ -3,6 +3,7 @@ const logger = require("../config/logger");
 const path = require("path");
 const nodemailer = require("nodemailer");
 const config = require("../config/config");
+const createUserDto = require('../dto/userDto');
 
 const transport = nodemailer.createTransport({
   service: "gmail",
@@ -57,9 +58,12 @@ exports.getAllUsers = async (req, res) => {
   try {
     const users = await UserModel.find(
       {},
-      "first_name last_name email role last_connection"
+      "first_name last_name email role"
     );
-    res.status(200).json(users);
+
+    const usersDto = users.map(user => createUserDto(user));
+    
+    res.status(200).json(usersDto);
   } catch (error) {
     logger.error("Error al obtener los usuarios:", error);
     res.status(500).json({ message: "Error interno del servidor", error });
