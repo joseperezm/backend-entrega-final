@@ -1,7 +1,8 @@
 <h1 class="mt-4 mb-3 text-center">Detalles de la Compra</h1>
 
 <div class="container mt-4">
-    <div class="card">
+    <h2 class="mt-4">Ticket</h2>
+    <div class="card w-100">
         <div class="card-body">
             <h5 class="card-title">Número de Ticket: <span>{{ticket.code}}</span></h5>
             <p class="card-text">Fecha de Compra: <span>{{ticket.purchase_datetime}}</span></p>
@@ -24,7 +25,6 @@
         </div>
         {{/each}}
     </div>
-
     {{#if ticket.failedProducts.length}}
     <div class="mt-4">
         <h3>Productos que no pudieron ser comprados debido a falta de stock</h3>
@@ -35,4 +35,6 @@
         </ul>
     </div>
     {{/if}}
+    <p class="mt-4 small text-center">(Recibirás un correo electrónico a {{ticket.purchaser}} con toda esta información.)</p>
+    <a class="btn btn-primary w-100 mt-5" href="/products">Seguir comprando</a>
 </div>

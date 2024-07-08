@@ -1,7 +1,23 @@
 const cartService = require('../services/cartService');
 const Product = require('../dao/models/products-mongoose');
+const Ticket = require('../dao/models/ticket-mongoose');
 const errorCodes = require('../utils/errorCodes');
 const logger = require("../config/logger");
+const nodemailer = require("nodemailer");
+const config = require("../config/config");
+
+const transport = nodemailer.createTransport({
+  service: "gmail",
+  port: 587,
+  auth: {
+    user: config.EMAIL_USER,
+    pass: config.EMAIL_PASS,
+  },
+  pool: true,
+  rateLimit: 1,
+  maxConnections: 1,
+  maxMessages: 10,
+});
 
 exports.createCart = async (req, res, next) => {
     try {
@@ -147,11 +163,67 @@ exports.deleteProductFromCart = async (req, res, next) => {
     }
 };
 
+const sendCompletePurchaseEmail = async (userEmail, purchaseDetails) => {
+    const productList = purchaseDetails.products.map(product => {
+        return `- ${product.productId.title} (Cantidad: ${product.quantity}, Precio: ${product.productId.price})`;
+    }).join('\n');
+
+    const mailOptions = {
+        from: config.EMAIL_USER,
+        to: userEmail,
+        subject: "Confirmación de Compra Completa",
+        text: `Estimado usuario, su compra ha sido finalizada con éxito.
+               Detalles:
+               - Monto Total: ${purchaseDetails.totalAmount}
+               - ID del Ticket: ${purchaseDetails.ticketId}
+               - Productos Comprados:
+               ${productList}`,
+    };
+
+    return transport.sendMail(mailOptions);
+};
+
+const sendPartialPurchaseEmail = async (userEmail, purchaseDetails) => {
+    const productList = purchaseDetails.products.map(product => {
+        return `- ${product.productId.title} (Cantidad: ${product.quantity}, Precio: ${product.productId.price})`;
+    }).join('\n');
+
+    const failedProductList = purchaseDetails.failedProducts.map(product => {
+        return `- ${product.title}`;
+    }).join('\n');
+
+    const mailOptions = {
+        from: config.EMAIL_USER,
+        to: userEmail,
+        subject: "Confirmación de Compra Parcial",
+        text: `Estimado usuario, su compra ha sido parcialmente exitosa.
+               Detalles:
+               - Monto Total: ${purchaseDetails.totalAmount}
+               - ID del Ticket: ${purchaseDetails.ticketId}
+               - Productos Comprados:
+               ${productList}
+               - Productos Fallidos:
+               ${failedProductList}`,
+    };
+
+    return transport.sendMail(mailOptions);
+};
+
 exports.finalizePurchase = async (req, res, next) => {
     const cartId = req.params.cid;
     const userEmail = req.user.email;
+
     try {
         const result = await cartService.finalizePurchase(cartId, userEmail);
+        const ticket = await Ticket.findById(result.ticketId).populate('products.productId').populate('failedProducts').exec();
+        const purchaseDetails = {
+            totalAmount: result.totalAmount,
+            ticketId: result.ticketId,
+            failedProducts: ticket.failedProducts,
+            products: ticket.products,
+            message: result.failedProducts.length > 0 ? 'parcialmente exitosa' : 'finalizada con éxito'
+        };
+
         if (result.failedProducts.length > 0) {
             logger.info(`Compra parcial con carrito ID: ${req.params.cid}`);
             res.status(206).json({
@@ -161,6 +233,14 @@ exports.finalizePurchase = async (req, res, next) => {
                 ticketId: result.ticketId,
                 failedProducts: result.failedProducts
             });
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (emailRegex.test(userEmail)) {
+                await sendPartialPurchaseEmail(userEmail, purchaseDetails);
+            } else {
+                logger.warn(`Correo electrónico no válido para el usuario con carrito ID: ${req.params.cid}`);
+            }
+
         } else {
             logger.info(`Compra exitosa con carrito ID: ${req.params.cid}`);
             res.status(200).json({
@@ -169,6 +249,13 @@ exports.finalizePurchase = async (req, res, next) => {
                 totalAmount: result.totalAmount,
                 ticketId: result.ticketId
             });
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (emailRegex.test(userEmail)) {
+                await sendCompletePurchaseEmail(userEmail, purchaseDetails);
+            } else {
+                logger.warn(`Correo electrónico no válido para el usuario con carrito ID: ${req.params.cid}`);
+            }
         }
     } catch (error) {
         logger.error("Error al finalizar la compra: ", error);
