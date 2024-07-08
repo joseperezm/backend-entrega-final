@@ -52,3 +52,17 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 });
+
+document.addEventListener('DOMContentLoaded', function() {
+    var emailInput = document.getElementById('userEmail');
+    
+    emailInput.addEventListener('input', function(e) {
+        e.preventDefault();
+        this.value = '{{user.email}}';
+    });
+
+    emailInput.addEventListener('cut', function(e) { e.preventDefault(); });
+    emailInput.addEventListener('paste', function(e) { e.preventDefault(); });
+
+    emailInput.addEventListener('drop', function(e) { e.preventDefault(); });
+});
