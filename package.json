@@ -37,6 +37,7 @@
     "passport-local": "^1.0.0",
     "path": "^0.12.7",
     "socket.io": "^4.7.4",
+    "socketio-file-upload": "^0.7.3",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
     "winston": "^3.13.0"

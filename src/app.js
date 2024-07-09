@@ -244,10 +244,21 @@ io.on("connection", async (socket) => {
         }
     });
     
-    socket.on("addProduct", async (producto) => {
-        await productRepositor.addProduct(producto);
+    socket.on("addProduct", async ({ product, thumbnails }) => {
+        if (thumbnails) {
+            const buffer = Buffer.from(thumbnails.split(",")[1], 'base64');
+            const thumbnailsPath = `./src/public/uploads/products/${Date.now()}-thumbnail.png`;
+            require('fs').writeFileSync(thumbnailsPath, buffer);
+    
+            const dbPath = thumbnailsPath.replace('./src/public', '');
+            product.thumbnails = dbPath;
+        }
+    
+        await productRepositor.addProduct(product);
         io.sockets.emit("products", await productRepositor.getProducts());
     });
+    
+    
 
     socket.on('user email provided', (email) => {
         logger.info(`Correo electrónico recibido: ${email}`);
