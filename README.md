@@ -507,6 +507,18 @@ El sistema de roles y permisos es esencial para la seguridad y funcionalidad del
      - Enviar mensajes al chat.
      - Acceder a sus propios datos de perfil.
 
+### Endpoints relacionados a roles
+
+1. **Subir documentos necesarios para premium**
+   - **Método**: `POST`
+   - **URL**: `http://localhost:8080/api/users/:uid/documents`
+   - **Descripción**: Subir documentos para ser usuario premium. Los documentos DEBEN llamarse o contener en su nombre id, cuenta y domicilio. EJ: mi_id.pdf, cuenta_corriente.pdf.
+
+2. **Cambiar ROL de usuario de premium a normal y viceversa**
+   - **Método**: `POST`
+   - **URL**: `http://localhost:8080/api/users/premium/:uid` (Reemplaza `:uid` con un ID de usuario existente)
+   - **Descripción**: Cambia el rol de usuario de normal a premium y viceversa. Se debe ser Admin para utilizar.
+
 ### Implementación de Roles y Permisos
 
 Para implementar los roles y permisos, se utiliza un middleware de autorización que verifica el rol del usuario antes de permitir el acceso a ciertas rutas o funcionalidades.
